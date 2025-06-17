@@ -1,881 +1,1008 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D Wireframe Terrain Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        @font-face {
-            font-family: Everett;
-            src: url(./fonts/TWKEverett-Regular.otf);
-        }
-        :root {
-            --bg-primary: #000000;
-            --bg-secondary: #0a0a0a;
-            --bg-panel: rgba(10, 10, 10, 0.95);
-            --border-primary: #1a1a1a;
-            --border-secondary: #2a2a2a;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --text-muted: #666666;
-            --accent-purple: #8b5cf6;
-            --accent-purple-dim: #6d28d9;
-            --button-hover: #1a1a1a;
-            --button-active: #2a2a2a;
-        }
-        
-        * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg-primary);
-            font-family: Everett;
-            overflow: hidden;
-            color: var(--text-primary);
-            font-weight: 400;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      @font-face {
+        font-family: Everett;
+        src: url(./fonts/TWKEverett-Regular.otf);
+      }
+      :root {
+        --bg-primary: #000000;
+        --bg-secondary: #0a0a0a;
+        --bg-panel: rgba(10, 10, 10, 0.95);
+        --border-primary: #1a1a1a;
+        --border-secondary: #2a2a2a;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --text-muted: #666666;
+        --accent-purple: #8b5cf6;
+        --accent-purple-dim: #6d28d9;
+        --button-hover: #1a1a1a;
+        --button-active: #2a2a2a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-primary);
+        font-family: Everett;
+        overflow: hidden;
+        color: var(--text-primary);
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #controls {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+        background: var(--bg-panel);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        width: 300px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Custom scrollbar */
+      #controls::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      #controls::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      #controls::-webkit-scrollbar-thumb {
+        background: var(--border-secondary);
+        border-radius: 2px;
+      }
+
+      #controls::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+
+      .header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid var(--border-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .logo-space {
+        width: 32px;
+        height: 32px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .logo-space img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+      }
+
+      .title {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .title-main {
+        font-weight: 400;
+        font-size: 18px;
+        color: var(--text-primary);
+      }
+
+      .title-sub {
+        font-weight: 300;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+
+      .content {
+        padding: 20px 24px 24px;
+      }
+
+      button {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-primary);
+        padding: 10px 16px;
+        margin: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.15s ease;
+      }
+
+      button:hover {
+        background: var(--button-hover);
+        border-color: var(--border-secondary);
+      }
+
+      button:active {
+        background: var(--button-active);
+      }
+
+      .primary-btn {
+        background: var(--accent-purple);
+        border-color: var(--accent-purple);
+        color: white;
+        font-weight: 600;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      .primary-btn:hover {
+        background: var(--accent-purple-dim);
+        border-color: var(--accent-purple-dim);
+      }
+
+      .section {
+        padding-top: 50px;
+        padding-bottom: 50px;
+        border-bottom: #2a2a2a 1px solid;
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+      }
+
+      .button-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .button-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+
+      .button-grid-4 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .small-btn {
+        font-size: 11px;
+        padding: 8px 12px;
+        font-weight: 500;
+      }
+
+      .small-btn.active {
+        background: var(--button-active);
+        border-color: var(--text-muted);
+        color: var(--text-primary);
+      }
+
+      .export-btn-full {
+        width: 100%;
+        margin-bottom: 8px;
+        background: var(--bg-secondary);
+        border-color: var(--border-secondary);
+      }
+
+      .export-btn-full:hover {
+        background: var(--button-hover);
+        border-color: var(--text-muted);
+      }
+
+      .slider-container {
+        margin-bottom: 20px;
+      }
+
+      .slider-container:last-child {
+        margin-bottom: 0;
+      }
+
+      .button-group {
+        margin-bottom: 20px;
+      }
+
+      .button-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .sub-section {
+        margin-top: 24px;
+      }
+
+      .sub-section-title {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 12px;
+      }
+
+      .slider-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      .slider-value {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 4px;
+        background: var(--border-primary);
+        border-radius: 2px;
+        outline: none;
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: var(--accent-purple);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid var(--bg-primary);
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--accent-purple);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid var(--bg-primary);
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+      }
+
+      #info {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        font-size: 11px;
+        color: var(--text-muted);
+        max-width: 280px;
+        line-height: 1.4;
+      }
+
+      #info p {
+        margin: 4px 0;
+      }
+
+      @media (max-height: 700px) {
         #controls {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: var(--bg-panel);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-primary);
-            border-radius: 12px;
-            width: 300px;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+          max-height: calc(100vh - 80px);
         }
-        
-        /* Custom scrollbar */
-        #controls::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        #controls::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        #controls::-webkit-scrollbar-thumb {
-            background: var(--border-secondary);
-            border-radius: 2px;
-        }
-        
-        #controls::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-        
-        .header {
-            padding: 24px 24px 16px;
-            border-bottom: 1px solid var(--border-primary);
-            display: flex;
-            align-items: center;
-         
-        }
-        
-        .logo-space {
-            width: 32px;
-            height: 32px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        .logo-space img {
-            width: 20px;
-            height: 20px;
-            object-fit: contain;
-        }
-        
-        .title {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-        }
-        
-        .title-main {
-            font-weight: 400;
-            font-size: 18px;
-            color: var(--text-primary);
-        }
-        
-        .title-sub {
-            font-weight: 300;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        .content {
-            padding: 20px 24px 24px;
-        }
-        
-        button {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-primary);
-            padding: 10px 16px;
-            margin: 0;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: 500;
-            font-size: 13px;
-            transition: all 0.15s ease;
-        }
-        
-        button:hover {
-            background: var(--button-hover);
-            border-color: var(--border-secondary);
-        }
-        
-        button:active {
-            background: var(--button-active);
-        }
-        
-        .primary-btn {
-            background: var(--accent-purple);
-            border-color: var(--accent-purple);
-            color: white;
-            font-weight: 600;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        
-        .primary-btn:hover {
-            background: var(--accent-purple-dim);
-            border-color: var(--accent-purple-dim);
-        }
-        
-        .section {
-            padding-top: 50px;
-            padding-bottom: 50px;
-            border-bottom: #2a2a2a 1px solid;
-        }
-        
-        .section:last-child {
-            margin-bottom: 0;
-        }
-        
-        .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
-        
-        .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        
-        .button-grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-        
-        .button-grid-4 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        
-        .small-btn {
-            font-size: 11px;
-            padding: 8px 12px;
-            font-weight: 500;
-        }
-        
-        .small-btn.active {
-            background: var(--button-active);
-            border-color: var(--text-muted);
-            color: var(--text-primary);
-        }
-        
-        .export-btn-full {
-            width: 100%;
-            margin-bottom: 8px;
-            background: var(--bg-secondary);
-            border-color: var(--border-secondary);
-        }
-        
-        .export-btn-full:hover {
-            background: var(--button-hover);
-            border-color: var(--text-muted);
-        }
-        
-        .slider-container {
-            margin-bottom: 20px;
-        }
-        
-        .slider-container:last-child {
-            margin-bottom: 0;
-        }
-        
-        .button-group {
-            margin-bottom: 20px;
-        }
-        
-        .button-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        .sub-section {
-            margin-top: 24px;
-        }
-        
-        .sub-section-title {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-bottom: 12px;
-        }
-        
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        
-        .slider-value {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            height: 4px;
-            background: var(--border-primary);
-            border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: var(--accent-purple);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid var(--bg-primary);
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: var(--accent-purple);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid var(--bg-primary);
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
-        
+
         #info {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            font-size: 11px;
-            color: var(--text-muted);
-            max-width: 280px;
-            line-height: 1.4;
+          display: none;
         }
-        
-        #info p {
-            margin: 4px 0;
+      }
+
+      @media (max-width: 400px) {
+        #controls {
+          left: 10px;
+          right: 10px;
+          width: auto;
         }
-        
-        @media (max-height: 700px) {
-            #controls {
-                max-height: calc(100vh - 80px);
-            }
-            
-            #info {
-                display: none;
-            }
+
+        .button-grid {
+          grid-template-columns: 1fr;
         }
-        
-        @media (max-width: 400px) {
-            #controls {
-                left: 10px;
-                right: 10px;
-                width: auto;
-            }
-            
-            .button-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .button-grid-4 {
-                grid-template-columns: 1fr;
-            }
+
+        .button-grid-4 {
+          grid-template-columns: 1fr;
         }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="container">
-        <div id="controls">
-            <div class="header">
-                <div class="logo-space">
-                    <!-- Replace with your PNG icon -->
-                    <img src="images/VantorLogo.png" alt="MAX Logo" style="display: none;" onload="this.style.display='block'; this.parentElement.style.background='transparent'; this.parentElement.style.border='none';" onerror="this.parentElement.innerHTML='M'; this.parentElement.style.background='var(--accent-purple)'; this.parentElement.style.color='white'; this.parentElement.style.fontWeight='700'; this.parentElement.style.fontSize='14px';">
-                    
-                </div>
-                <div class="title">
-              
-                    <span class="title-sub">terrain generator</span>
-                </div>
-            </div>
-            
-            <div class="content">
-                <div class="generate-section">
-                    <button id="generateBtn" class="primary-btn">Generate New Terrain</button>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">Camera Settings</div>
-                    
-                    <div class="sub-section-title">View Angle</div>
-                    <div class="button-group">
-                        <div class="button-grid-4">
-                            <button id="profileBtn" class="small-btn">Profile</button>
-                            <button id="isoLowBtn" class="small-btn active">Iso Low</button>
-                            <button id="isoMedBtn" class="small-btn">Iso Med</button>
-                            <button id="isoHighBtn" class="small-btn">Iso High</button>
-                        </div>
-                    </div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Rotation</span>
-                            <span class="slider-value"><span id="rotationValue">45</span>°</span>
-                        </div>
-                        <input type="range" id="rotationSlider" min="0" max="360" step="15" value="45">
-                    </div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Zoom Level</span>
-                            <span class="slider-value"><span id="zoomValue">50</span></span>
-                        </div>
-                        <input type="range" id="zoomSlider" min="20" max="100" value="50">
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">Terrain Parameters</div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Terrain Scale</span>
-                            <span class="slider-value"><span id="scaleValue">50</span></span>
-                        </div>
-                        <input type="range" id="scaleSlider" min="20" max="100" value="50">
-                    </div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Height Intensity</span>
-                            <span class="slider-value"><span id="heightValue">8</span></span>
-                        </div>
-                        <input type="range" id="heightSlider" min="2" max="20" value="8">
-                    </div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Noise Detail</span>
-                            <span class="slider-value"><span id="noiseValue">0.1</span></span>
-                        </div>
-                        <input type="range" id="noiseSlider" min="0.05" max="0.3" step="0.01" value="0.1">
-                    </div>
-                    
-                    <div class="sub-section">
-                        <div class="sub-section-title">Mesh Options</div>
-                        <div class="slider-container">
-                            <div class="slider-label">
-                                <span>Grid Density</span>
-                                <span class="slider-value"><span id="densityValue">64</span></span>
-                            </div>
-                            <input type="range" id="densitySlider" min="16" max="128" step="8" value="64">
-                        </div>
-                        
-                        <div class="sub-section-title">Wireframe Style</div>
-                        <div class="button-group">
-                            <div class="button-grid">
-                                <button id="trianglesBtn" class="small-btn wireframe-btn active">Triangles</button>
-                                <button id="gridBtn" class="small-btn wireframe-btn">Grid</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">Export</div>
-                    
-                    <div class="sub-section-title">Background Style</div>
-                    <div class="button-group">
-                        <div class="button-grid">
-                            <button id="bgBlackBtn" class="small-btn bg-btn active">Black</button>
-                            <button id="bgTransBtn" class="small-btn bg-btn">Transparent</button>
-                        </div>
-                    </div>
-                    
-                    <div class="sub-section-title">File Format</div>
-                    <div class="button-group">
-                        <div class="button-grid-4">
-                            <button id="export1xBtn" class="small-btn export-btn active">PNG 1x</button>
-                            <button id="export2xBtn" class="small-btn export-btn">PNG 2x</button>
-                            <button id="export4xBtn" class="small-btn export-btn">PNG 4x</button>
-                            <button id="exportSvgBtn" class="small-btn export-btn">SVG</button>
-                        </div>
-                    </div>
-                    
-                    <button id="exportBtn" class="export-btn-full">Export Current View</button>
-                    <button id="exportAllBtn" class="export-btn-full">Export All Views</button>
-                </div>
-            </div>
+      <div id="controls">
+        <div class="header">
+          <div class="logo-space">
+            <!-- Replace with your PNG icon -->
+            <img
+              src="images/VantorLogo.png"
+              alt="MAX Logo"
+              style="display: none"
+              onload="this.style.display='block'; this.parentElement.style.background='transparent'; this.parentElement.style.border='none';"
+              onerror="this.parentElement.innerHTML='M'; this.parentElement.style.background='var(--accent-purple)'; this.parentElement.style.color='white'; this.parentElement.style.fontWeight='700'; this.parentElement.style.fontSize='14px';"
+            />
+          </div>
+          <div class="title">
+            <span class="title-sub">terrain generator</span>
+          </div>
         </div>
-        
-        <div id="info">
-            <p>• Generate terrain with customizable parameters</p>
-            <p>• Use precise camera angles and rotation control</p>
-            <p>• Export high-quality PNG or editable SVG files</p>
-            <p>• All Views exports current terrain from every angle</p>
+
+        <div class="content">
+          <div class="generate-section">
+            <button id="generateBtn" class="primary-btn">
+              Generate New Terrain
+            </button>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Camera Settings</div>
+
+            <div class="sub-section-title">View Angle</div>
+            <div class="button-group">
+              <div class="button-grid-4">
+                <button id="profileBtn" class="small-btn camera-btn">
+                  Profile
+                </button>
+                <button id="isoLowBtn" class="small-btn camera-btn active">
+                  Iso Low
+                </button>
+                <button id="isoMedBtn" class="small-btn camera-btn">
+                  Iso Med
+                </button>
+                <button id="isoHighBtn" class="small-btn camera-btn">
+                  Iso High
+                </button>
+              </div>
+            </div>
+
+            <div class="slider-container">
+              <div class="slider-label">
+                <span>Rotation</span>
+                <span class="slider-value"
+                  ><span id="rotationValue">45</span>°</span
+                >
+              </div>
+              <input
+                type="range"
+                id="rotationSlider"
+                min="0"
+                max="360"
+                step="15"
+                value="45"
+              />
+            </div>
+
+            <div class="slider-container">
+              <div class="slider-label">
+                <span>Zoom Level</span>
+                <span class="slider-value"><span id="zoomValue">50</span></span>
+              </div>
+              <input
+                type="range"
+                id="zoomSlider"
+                min="20"
+                max="100"
+                value="50"
+              />
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Terrain Parameters</div>
+
+            <div class="slider-container">
+              <div class="slider-label">
+                <span>Terrain Scale</span>
+                <span class="slider-value"
+                  ><span id="scaleValue">50</span></span
+                >
+              </div>
+              <input
+                type="range"
+                id="scaleSlider"
+                min="20"
+                max="100"
+                value="50"
+              />
+            </div>
+
+            <div class="slider-container">
+              <div class="slider-label">
+                <span>Height Intensity</span>
+                <span class="slider-value"
+                  ><span id="heightValue">8</span></span
+                >
+              </div>
+              <input
+                type="range"
+                id="heightSlider"
+                min="2"
+                max="20"
+                value="8"
+              />
+            </div>
+
+            <div class="slider-container">
+              <div class="slider-label">
+                <span>Noise Detail</span>
+                <span class="slider-value"
+                  ><span id="noiseValue">0.1</span></span
+                >
+              </div>
+              <input
+                type="range"
+                id="noiseSlider"
+                min="0.05"
+                max="0.3"
+                step="0.01"
+                value="0.1"
+              />
+            </div>
+
+            <div class="sub-section">
+              <div class="sub-section-title">Mesh Options</div>
+              <div class="slider-container">
+                <div class="slider-label">
+                  <span>Grid Density</span>
+                  <span class="slider-value"
+                    ><span id="densityValue">64</span></span
+                  >
+                </div>
+                <input
+                  type="range"
+                  id="densitySlider"
+                  min="16"
+                  max="128"
+                  step="8"
+                  value="64"
+                />
+              </div>
+
+              <div class="sub-section-title">Wireframe Style</div>
+              <div class="button-group">
+                <div class="button-grid">
+                  <button
+                    id="trianglesBtn"
+                    class="small-btn wireframe-btn active"
+                  >
+                    Triangles
+                  </button>
+                  <button id="gridBtn" class="small-btn wireframe-btn">
+                    Grid
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Export</div>
+
+            <div class="sub-section-title">Background Style</div>
+            <div class="button-group">
+              <div class="button-grid">
+                <button id="bgBlackBtn" class="small-btn bg-btn active">
+                  Black
+                </button>
+                <button id="bgTransBtn" class="small-btn bg-btn">
+                  Transparent
+                </button>
+              </div>
+            </div>
+
+            <div class="sub-section-title">File Format</div>
+            <div class="button-group">
+              <div class="button-grid-4">
+                <button id="export1xBtn" class="small-btn export-btn active">
+                  PNG 1x
+                </button>
+                <button id="export2xBtn" class="small-btn export-btn">
+                  PNG 2x
+                </button>
+                <button id="export4xBtn" class="small-btn export-btn">
+                  PNG 4x
+                </button>
+                <button id="exportSvgBtn" class="small-btn export-btn">
+                  SVG
+                </button>
+              </div>
+            </div>
+
+            <button id="exportBtn" class="export-btn-full">
+              Export Current View
+            </button>
+            <button id="exportAllBtn" class="export-btn-full">
+              Export All Views
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div id="info">
+        <p>• Generate terrain with customizable parameters</p>
+        <p>• Use precise camera angles and rotation control</p>
+        <p>• Export high-quality PNG or editable SVG files</p>
+        <p>• All Views exports current terrain from every angle</p>
+      </div>
     </div>
 
     <script>
-        // Global variables
-        let scene, camera, renderer, terrain;
-        let currentCameraMode = 'isolow';
-        let cameraRotation = 45; // Rotation around Y axis in degrees
-        let zoomLevel = 50;
-        let terrainScale = 50;
-        let heightIntensity = 8;
-        let noiseScale = 0.1;
-        let gridDensity = 64;
-        let wireframeType = 'triangles'; // 'triangles' or 'grid'
-        let exportSize = 1; // Export resolution multiplier
-        let exportBackground = 'black'; // 'black' or 'transparent'
-        let seed = Math.random() * 1000;
+      // Global variables
+      let scene, camera, renderer, terrain;
+      let currentCameraMode = "isolow";
+      let cameraRotation = 45; // Rotation around Y axis in degrees
+      let zoomLevel = 50;
+      let terrainScale = 50;
+      let heightIntensity = 8;
+      let noiseScale = 0.1;
+      let gridDensity = 64;
+      let wireframeType = "triangles"; // 'triangles' or 'grid'
+      let exportSize = 1; // Export resolution multiplier
+      let exportBackground = "black"; // 'black' or 'transparent'
+      let seed = Math.random() * 1000;
 
-        // Camera preset configurations
-        const cameraPresets = {
-            profile: {
-                type: 'orthographic',
-                distance: 80,
-                elevation: 0, // Side view
-                name: 'Profile'
-            },
-            isolow: {
-                type: 'orthographic', 
-                distance: 70,
-                elevation: 30, // Low isometric
-                name: 'Iso Low'
-            },
-            isomed: {
-                type: 'orthographic',
-                distance: 70,
-                elevation: 45, // Medium isometric
-                name: 'Iso Med'
-            },
-            isohigh: {
-                type: 'orthographic',
-                distance: 70,
-                elevation: 60, // High isometric
-                name: 'Iso High'
-            }
-        };
+      // Camera preset configurations
+      const cameraPresets = {
+        profile: {
+          type: "orthographic",
+          distance: 80,
+          elevation: 0, // Side view
+          name: "Profile",
+        },
+        isolow: {
+          type: "orthographic",
+          distance: 70,
+          elevation: 30, // Low isometric
+          name: "Iso Low",
+        },
+        isomed: {
+          type: "orthographic",
+          distance: 70,
+          elevation: 45, // Medium isometric
+          name: "Iso Med",
+        },
+        isohigh: {
+          type: "orthographic",
+          distance: 70,
+          elevation: 60, // High isometric
+          name: "Iso High",
+        },
+      };
 
-        // Simplified noise function (Perlin-like)
-        function noise(x, y, seed) {
-            // Simple pseudo-random noise function
-            const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
-            return (n - Math.floor(n)) * 2 - 1;
+      // Simplified noise function (Perlin-like)
+      function noise(x, y, seed) {
+        // Simple pseudo-random noise function
+        const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
+        return (n - Math.floor(n)) * 2 - 1;
+      }
+
+      function smoothNoise(x, y, seed) {
+        const corners =
+          (noise(x - 1, y - 1, seed) +
+            noise(x + 1, y - 1, seed) +
+            noise(x - 1, y + 1, seed) +
+            noise(x + 1, y + 1, seed)) /
+          16;
+        const sides =
+          (noise(x - 1, y, seed) +
+            noise(x + 1, y, seed) +
+            noise(x, y - 1, seed) +
+            noise(x, y + 1, seed)) /
+          8;
+        const center = noise(x, y, seed) / 4;
+        return corners + sides + center;
+      }
+
+      function interpolatedNoise(x, y, seed) {
+        const intX = Math.floor(x);
+        const fractX = x - intX;
+        const intY = Math.floor(y);
+        const fractY = y - intY;
+
+        const v1 = smoothNoise(intX, intY, seed);
+        const v2 = smoothNoise(intX + 1, intY, seed);
+        const v3 = smoothNoise(intX, intY + 1, seed);
+        const v4 = smoothNoise(intX + 1, intY + 1, seed);
+
+        const i1 = v1 * (1 - fractX) + v2 * fractX;
+        const i2 = v3 * (1 - fractX) + v4 * fractX;
+
+        return i1 * (1 - fractY) + i2 * fractY;
+      }
+
+      function generateHeight(x, y, scale, intensity, seed) {
+        let height = 0;
+        let amplitude = 1;
+        let frequency = scale;
+
+        // Multiple octaves for more complex terrain
+        for (let i = 0; i < 4; i++) {
+          height +=
+            interpolatedNoise(x * frequency, y * frequency, seed) * amplitude;
+          amplitude *= 0.5;
+          frequency *= 2;
         }
 
-        function smoothNoise(x, y, seed) {
-            const corners = (noise(x-1, y-1, seed) + noise(x+1, y-1, seed) + 
-                           noise(x-1, y+1, seed) + noise(x+1, y+1, seed)) / 16;
-            const sides = (noise(x-1, y, seed) + noise(x+1, y, seed) + 
-                         noise(x, y-1, seed) + noise(x, y+1, seed)) / 8;
-            const center = noise(x, y, seed) / 4;
-            return corners + sides + center;
+        return height * intensity;
+      }
+
+      function createTerrain() {
+        if (wireframeType === "grid") {
+          return createGridTerrain();
+        } else {
+          return createTriangleTerrain();
+        }
+      }
+
+      function createTriangleTerrain() {
+        // Standard triangulated plane geometry
+        const geometry = new THREE.PlaneGeometry(
+          terrainScale,
+          terrainScale,
+          gridDensity - 1,
+          gridDensity - 1
+        );
+        geometry.rotateX(-Math.PI / 2);
+
+        // Generate terrain heights
+        const vertices = geometry.attributes.position.array;
+
+        for (let i = 0; i < vertices.length; i += 3) {
+          const x = vertices[i];
+          const z = vertices[i + 2];
+
+          const height = generateHeight(
+            x,
+            z,
+            noiseScale,
+            heightIntensity,
+            seed
+          );
+          vertices[i + 1] = height;
         }
 
-        function interpolatedNoise(x, y, seed) {
-            const intX = Math.floor(x);
-            const fractX = x - intX;
-            const intY = Math.floor(y);
-            const fractY = y - intY;
+        geometry.attributes.position.needsUpdate = true;
+        geometry.computeVertexNormals();
 
-            const v1 = smoothNoise(intX, intY, seed);
-            const v2 = smoothNoise(intX + 1, intY, seed);
-            const v3 = smoothNoise(intX, intY + 1, seed);
-            const v4 = smoothNoise(intX + 1, intY + 1, seed);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.8,
+        });
 
-            const i1 = v1 * (1 - fractX) + v2 * fractX;
-            const i2 = v3 * (1 - fractX) + v4 * fractX;
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotation.set(0, 0, 0);
 
-            return i1 * (1 - fractY) + i2 * fractY;
-        }
+        return mesh;
+      }
 
-        function generateHeight(x, y, scale, intensity, seed) {
-            let height = 0;
-            let amplitude = 1;
-            let frequency = scale;
-            
-            // Multiple octaves for more complex terrain
-            for (let i = 0; i < 4; i++) {
-                height += interpolatedNoise(x * frequency, y * frequency, seed) * amplitude;
-                amplitude *= 0.5;
-                frequency *= 2;
-            }
-            
-            return height * intensity;
-        }
+      function createGridTerrain() {
+        const halfSize = terrainScale / 2;
+        const step = terrainScale / (gridDensity - 1);
 
-        function createTerrain() {
-            if (wireframeType === 'grid') {
-                return createGridTerrain();
-            } else {
-                return createTriangleTerrain();
-            }
-        }
-        
-        function createTriangleTerrain() {
-            // Standard triangulated plane geometry
-            const geometry = new THREE.PlaneGeometry(terrainScale, terrainScale, gridDensity - 1, gridDensity - 1);
-            geometry.rotateX(-Math.PI / 2);
-            
-            // Generate terrain heights
-            const vertices = geometry.attributes.position.array;
-            
-            for (let i = 0; i < vertices.length; i += 3) {
-                const x = vertices[i];
-                const z = vertices[i + 2];
-                
-                const height = generateHeight(x, z, noiseScale, heightIntensity, seed);
-                vertices[i + 1] = height;
-            }
-            
-            geometry.attributes.position.needsUpdate = true;
-            geometry.computeVertexNormals();
-            
-            const material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.8
-            });
-            
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.rotation.set(0, 0, 0);
-            
-            return mesh;
-        }
-        
-        function createGridTerrain() {
-            const halfSize = terrainScale / 2;
-            const step = terrainScale / (gridDensity - 1);
-            
-            const vertices = [];
-            const gridVertices = []; // Store vertices for height lookup
-            
-            // Create grid of vertices with heights
-            for (let i = 0; i < gridDensity; i++) {
-                gridVertices[i] = [];
-                for (let j = 0; j < gridDensity; j++) {
-                    const x = -halfSize + j * step;
-                    const z = -halfSize + i * step;
-                    const height = generateHeight(x, z, noiseScale, heightIntensity, seed);
-                    gridVertices[i][j] = { x, y: height, z };
-                }
-            }
-            
-            // Create horizontal lines
-            for (let i = 0; i < gridDensity; i++) {
-                for (let j = 0; j < gridDensity - 1; j++) {
-                    const current = gridVertices[i][j];
-                    const next = gridVertices[i][j + 1];
-                    
-                    vertices.push(current.x, current.y, current.z);
-                    vertices.push(next.x, next.y, next.z);
-                }
-            }
-            
-            // Create vertical lines
-            for (let j = 0; j < gridDensity; j++) {
-                for (let i = 0; i < gridDensity - 1; i++) {
-                    const current = gridVertices[i][j];
-                    const next = gridVertices[i + 1][j];
-                    
-                    vertices.push(current.x, current.y, current.z);
-                    vertices.push(next.x, next.y, next.z);
-                }
-            }
-            
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            
-            const material = new THREE.LineBasicMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.8
-            });
-            
-            return new THREE.LineSegments(geometry, material);
-        }
+        const vertices = [];
+        const gridVertices = []; // Store vertices for height lookup
 
-        function setupCamera() {
-            const aspect = window.innerWidth / window.innerHeight;
-            const preset = cameraPresets[currentCameraMode];
-            
-            // Calculate zoom factor (20-100 maps to 0.3x - 2.0x)
-            const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
-            
-            // All cameras are orthographic for consistent technical views
-            const frustumSize = 60 / zoomFactor;
-            camera = new THREE.OrthographicCamera(
-                frustumSize * aspect / -2,
-                frustumSize * aspect / 2,
-                frustumSize / 2,
-                frustumSize / -2,
-                1,
-                1000
+        // Create grid of vertices with heights
+        for (let i = 0; i < gridDensity; i++) {
+          gridVertices[i] = [];
+          for (let j = 0; j < gridDensity; j++) {
+            const x = -halfSize + j * step;
+            const z = -halfSize + i * step;
+            const height = generateHeight(
+              x,
+              z,
+              noiseScale,
+              heightIntensity,
+              seed
             );
-            
-            // Calculate camera position based on preset and rotation
-            const distance = preset.distance / zoomFactor;
-            const elevationRad = (preset.elevation * Math.PI) / 180;
-            const rotationRad = (cameraRotation * Math.PI) / 180;
-            
-            // Calculate position using spherical coordinates
-            const x = distance * Math.cos(elevationRad) * Math.cos(rotationRad);
-            const y = distance * Math.sin(elevationRad);
-            const z = distance * Math.cos(elevationRad) * Math.sin(rotationRad);
-            
-            camera.position.set(x, y, z);
-            camera.lookAt(0, 0, 0);
-            
-            // Update active camera button
-            document.querySelectorAll('.camera-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(getCameraButtonId(currentCameraMode)).classList.add('active');
-        }
-        
-        function getCameraButtonId(mode) {
-            const idMap = {
-                'profile': 'profileBtn',
-                'isolow': 'isoLowBtn', 
-                'isomed': 'isoMedBtn',
-                'isohigh': 'isoHighBtn'
-            };
-            return idMap[mode];
-        }
-        
-        function setCameraPreset(mode) {
-            currentCameraMode = mode;
-            setupCamera();
+            gridVertices[i][j] = { x, y: height, z };
+          }
         }
 
-        function init() {
-            // Scene setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x000000);
-            
-            // Camera setup
-            setupCamera();
-            
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 0); // Transparent background for exports
-            document.getElementById('container').appendChild(renderer.domElement);
-            
-            // Add some ambient lighting for depth perception
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
-            scene.add(ambientLight);
-            
-            // Create initial terrain
-            generateTerrain();
-            
-            // Animation loop
-            animate();
+        // Create horizontal lines
+        for (let i = 0; i < gridDensity; i++) {
+          for (let j = 0; j < gridDensity - 1; j++) {
+            const current = gridVertices[i][j];
+            const next = gridVertices[i][j + 1];
+
+            vertices.push(current.x, current.y, current.z);
+            vertices.push(next.x, next.y, next.z);
+          }
         }
 
-        function generateTerrain() {
-            // Remove existing terrain
-            if (terrain) {
-                scene.remove(terrain);
-                terrain.geometry.dispose();
-                terrain.material.dispose();
-            }
-            
-            // Generate new seed for randomness
-            seed = Math.random() * 1000;
-            
-            // Create new terrain
-            terrain = createTerrain();
-            scene.add(terrain);
+        // Create vertical lines
+        for (let j = 0; j < gridDensity; j++) {
+          for (let i = 0; i < gridDensity - 1; i++) {
+            const current = gridVertices[i][j];
+            const next = gridVertices[i + 1][j];
+
+            vertices.push(current.x, current.y, current.z);
+            vertices.push(next.x, next.y, next.z);
+          }
         }
 
-        function setupControls() {
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-            let targetRotationX = 0, targetRotationY = 0;
-            let currentRotationX = 0, currentRotationY = 0;
-            
-            renderer.domElement.addEventListener('mousedown', (event) => {
-                isMouseDown = true;
-                mouseX = event.clientX;
-                mouseY = event.clientY;
-            });
-            
-            renderer.domElement.addEventListener('mousemove', (event) => {
-                if (isMouseDown) {
-                    const deltaX = event.clientX - mouseX;
-                    const deltaY = event.clientY - mouseY;
-                    
-                    targetRotationY += deltaX * 0.01;
-                    targetRotationX += deltaY * 0.01;
-                    
-                    mouseX = event.clientX;
-                    mouseY = event.clientY;
-                }
-            });
-            
-            renderer.domElement.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-            
-            renderer.domElement.addEventListener('wheel', (event) => {
-                event.preventDefault();
-                const scale = event.deltaY > 0 ? 1.1 : 0.9;
-                camera.position.multiplyScalar(scale);
-            });
-            
-            // Smooth rotation animation
-            function updateRotation() {
-                currentRotationX += (targetRotationX - currentRotationX) * 0.1;
-                currentRotationY += (targetRotationY - currentRotationY) * 0.1;
-                
-                if (terrain) {
-                    terrain.rotation.x = currentRotationX;
-                    terrain.rotation.y = currentRotationY;
-                }
-                
-                requestAnimationFrame(updateRotation);
-            }
-            updateRotation();
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(vertices, 3)
+        );
+
+        const material = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8,
+        });
+
+        return new THREE.LineSegments(geometry, material);
+      }
+
+      function setupCamera() {
+        const aspect = window.innerWidth / window.innerHeight;
+        const preset = cameraPresets[currentCameraMode];
+
+        // Calculate zoom factor (20-100 maps to 0.3x - 2.0x)
+        const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
+
+        // All cameras are orthographic for consistent technical views
+        const frustumSize = 60 / zoomFactor;
+        camera = new THREE.OrthographicCamera(
+          (frustumSize * aspect) / -2,
+          (frustumSize * aspect) / 2,
+          frustumSize / 2,
+          frustumSize / -2,
+          1,
+          1000
+        );
+
+        // Calculate camera position based on preset and rotation
+        const distance = preset.distance / zoomFactor;
+        const elevationRad = (preset.elevation * Math.PI) / 180;
+        const rotationRad = (cameraRotation * Math.PI) / 180;
+
+        // Calculate position using spherical coordinates
+        const x = distance * Math.cos(elevationRad) * Math.cos(rotationRad);
+        const y = distance * Math.sin(elevationRad);
+        const z = distance * Math.cos(elevationRad) * Math.sin(rotationRad);
+
+        camera.position.set(x, y, z);
+        camera.lookAt(0, 0, 0);
+
+        // Update active camera button - FIXED!
+        document
+          .querySelectorAll(".camera-btn") // ✅ Now matches the actual class
+          .forEach((btn) => btn.classList.remove("active"));
+        document
+          .getElementById(getCameraButtonId(currentCameraMode))
+          .classList.add("active");
+      }
+
+      function getCameraButtonId(mode) {
+        const idMap = {
+          profile: "profileBtn",
+          isolow: "isoLowBtn",
+          isomed: "isoMedBtn",
+          isohigh: "isoHighBtn",
+        };
+        return idMap[mode];
+      }
+
+      function setCameraPreset(mode) {
+        currentCameraMode = mode;
+        setupCamera();
+      }
+
+      function init() {
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        // Camera setup
+        setupCamera();
+
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          preserveDrawingBuffer: true,
+          alpha: true,
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0); // Transparent background for exports
+        document.getElementById("container").appendChild(renderer.domElement);
+
+        // Add some ambient lighting for depth perception
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+        scene.add(ambientLight);
+
+        // Create initial terrain
+        generateTerrain();
+
+        // Animation loop
+        animate();
+      }
+
+      function generateTerrain() {
+        // Remove existing terrain
+        if (terrain) {
+          scene.remove(terrain);
+          terrain.geometry.dispose();
+          terrain.material.dispose();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Always use black background for viewport
-            renderer.setClearColor(0x000000, 1);
-            renderer.render(scene, camera);
+        // Generate new seed for randomness
+        seed = Math.random() * 1000;
+
+        // Create new terrain
+        terrain = createTerrain();
+        scene.add(terrain);
+      }
+
+      function setupControls() {
+        let isMouseDown = false;
+        let mouseX = 0,
+          mouseY = 0;
+        let targetRotationX = 0,
+          targetRotationY = 0;
+        let currentRotationX = 0,
+          currentRotationY = 0;
+
+        renderer.domElement.addEventListener("mousedown", (event) => {
+          isMouseDown = true;
+          mouseX = event.clientX;
+          mouseY = event.clientY;
+        });
+
+        renderer.domElement.addEventListener("mousemove", (event) => {
+          if (isMouseDown) {
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+
+            targetRotationY += deltaX * 0.01;
+            targetRotationX += deltaY * 0.01;
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          }
+        });
+
+        renderer.domElement.addEventListener("mouseup", () => {
+          isMouseDown = false;
+        });
+
+        renderer.domElement.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          const scale = event.deltaY > 0 ? 1.1 : 0.9;
+          camera.position.multiplyScalar(scale);
+        });
+
+        // Smooth rotation animation
+        function updateRotation() {
+          currentRotationX += (targetRotationX - currentRotationX) * 0.1;
+          currentRotationY += (targetRotationY - currentRotationY) * 0.1;
+
+          if (terrain) {
+            terrain.rotation.x = currentRotationX;
+            terrain.rotation.y = currentRotationY;
+          }
+
+          requestAnimationFrame(updateRotation);
         }
-        
-        // Export functions
-        function exportCurrentView(format = 'png', resolution = 1) {
-            if (format === 'svg') {
-                exportSVG();
-                return;
-            }
-            
-            const originalWidth = renderer.domElement.width;
-            const originalHeight = renderer.domElement.height;
-            
-            // Set high resolution temporarily
-            const exportWidth = originalWidth * resolution;
-            const exportHeight = originalHeight * resolution;
-            
-            renderer.setSize(exportWidth, exportHeight);
-            
-            // Set background based on user choice
-            const bgAlpha = exportBackground === 'transparent' ? 0 : 1;
-            renderer.setClearColor(0x000000, bgAlpha);
-            
-            // Update camera for new aspect ratio
-            const aspect = exportWidth / exportHeight;
-            const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
-            const frustumSize = 60 / zoomFactor;
-            
-            camera.left = frustumSize * aspect / -2;
-            camera.right = frustumSize * aspect / 2;
-            camera.top = frustumSize / 2;
-            camera.bottom = frustumSize / -2;
-            camera.updateProjectionMatrix();
-            
-            // Render and capture
-            renderer.render(scene, camera);
-            
-            const canvas = renderer.domElement;
-            const link = document.createElement('a');
-            
-            // Generate filename with current settings
-            const bgSuffix = exportBackground === 'transparent' ? '_transparent' : '';
-            const filename = `terrain_${currentCameraMode}_${cameraRotation}deg_${wireframeType}_${resolution}x${bgSuffix}.png`;
-            
-            link.download = filename;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            
-            // Restore original size
-            renderer.setSize(originalWidth, originalHeight);
-            camera.left = frustumSize * (originalWidth/originalHeight) / -2;
-            camera.right = frustumSize * (originalWidth/originalHeight) / 2;
-            camera.updateProjectionMatrix();
+        updateRotation();
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Always use black background for viewport
+        renderer.setClearColor(0x000000, 1);
+        renderer.render(scene, camera);
+      }
+
+      // Export functions
+      function exportCurrentView(format = "png", resolution = 1) {
+        if (format === "svg") {
+          exportSVG();
+          return;
         }
-        
-        function exportSVG() {
-            if (!terrain) return;
-            
-            // Get camera settings for projection
-            const aspect = window.innerWidth / window.innerHeight;
-            const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
-            const frustumSize = 60 / zoomFactor;
-            
-            // SVG dimensions
-            const svgWidth = 1200;
-            const svgHeight = 800;
-            
-            // Start SVG
-            let svg = `<?xml version="1.0" encoding="UTF-8"?>
+
+        const originalWidth = renderer.domElement.width;
+        const originalHeight = renderer.domElement.height;
+
+        // Set high resolution temporarily
+        const exportWidth = originalWidth * resolution;
+        const exportHeight = originalHeight * resolution;
+
+        renderer.setSize(exportWidth, exportHeight);
+
+        // Set background based on user choice
+        const bgAlpha = exportBackground === "transparent" ? 0 : 1;
+        renderer.setClearColor(0x000000, bgAlpha);
+
+        // Update camera for new aspect ratio
+        const aspect = exportWidth / exportHeight;
+        const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
+        const frustumSize = 60 / zoomFactor;
+
+        camera.left = (frustumSize * aspect) / -2;
+        camera.right = (frustumSize * aspect) / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = frustumSize / -2;
+        camera.updateProjectionMatrix();
+
+        // Render and capture
+        renderer.render(scene, camera);
+
+        const canvas = renderer.domElement;
+        const link = document.createElement("a");
+
+        // Generate filename with current settings
+        const bgSuffix =
+          exportBackground === "transparent" ? "_transparent" : "";
+        const filename = `terrain_${currentCameraMode}_${cameraRotation}deg_${wireframeType}_${resolution}x${bgSuffix}.png`;
+
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        // Restore original size
+        renderer.setSize(originalWidth, originalHeight);
+        camera.left = (frustumSize * (originalWidth / originalHeight)) / -2;
+        camera.right = (frustumSize * (originalWidth / originalHeight)) / 2;
+        camera.updateProjectionMatrix();
+      }
+
+      function exportSVG() {
+        if (!terrain) return;
+
+        // Get camera settings for projection
+        const aspect = window.innerWidth / window.innerHeight;
+        const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
+        const frustumSize = 60 / zoomFactor;
+
+        // SVG dimensions
+        const svgWidth = 1200;
+        const svgHeight = 800;
+
+        // Start SVG
+        let svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
 <defs>
     <style>
@@ -889,210 +1016,272 @@
 </defs>
 <g id="terrain-wireframe">`;
 
-            // Project 3D points to 2D
-            function project3DTo2D(x, y, z) {
-                const vector = new THREE.Vector3(x, y, z);
-                vector.project(camera);
-                
-                const screenX = (vector.x + 1) * svgWidth / 2;
-                const screenY = (-vector.y + 1) * svgHeight / 2;
-                return { x: screenX, y: screenY };
-            }
-            
-            // Extract geometry data
-            if (wireframeType === 'grid' && terrain.geometry) {
-                // Grid wireframe - extract line segments
-                const positions = terrain.geometry.attributes.position.array;
-                
-                for (let i = 0; i < positions.length; i += 6) {
-                    const start = project3DTo2D(positions[i], positions[i + 1], positions[i + 2]);
-                    const end = project3DTo2D(positions[i + 3], positions[i + 4], positions[i + 5]);
-                    
-                    svg += `
+        // Project 3D points to 2D
+        function project3DTo2D(x, y, z) {
+          const vector = new THREE.Vector3(x, y, z);
+          vector.project(camera);
+
+          const screenX = ((vector.x + 1) * svgWidth) / 2;
+          const screenY = ((-vector.y + 1) * svgHeight) / 2;
+          return { x: screenX, y: screenY };
+        }
+
+        // Extract geometry data
+        if (wireframeType === "grid" && terrain.geometry) {
+          // Grid wireframe - extract line segments
+          const positions = terrain.geometry.attributes.position.array;
+
+          for (let i = 0; i < positions.length; i += 6) {
+            const start = project3DTo2D(
+              positions[i],
+              positions[i + 1],
+              positions[i + 2]
+            );
+            const end = project3DTo2D(
+              positions[i + 3],
+              positions[i + 4],
+              positions[i + 5]
+            );
+
+            svg += `
     <line x1="${start.x.toFixed(2)}" y1="${start.y.toFixed(2)}" 
           x2="${end.x.toFixed(2)}" y2="${end.y.toFixed(2)}" 
           class="terrain-line"/>`;
-                }
-            } else if (wireframeType === 'triangles' && terrain.geometry) {
-                // Triangle wireframe - extract triangle edges
-                const positions = terrain.geometry.attributes.position.array;
-                const indices = terrain.geometry.index ? terrain.geometry.index.array : null;
-                
-                if (indices) {
-                    for (let i = 0; i < indices.length; i += 3) {
-                        const i1 = indices[i] * 3;
-                        const i2 = indices[i + 1] * 3;
-                        const i3 = indices[i + 2] * 3;
-                        
-                        const p1 = project3DTo2D(positions[i1], positions[i1 + 1], positions[i1 + 2]);
-                        const p2 = project3DTo2D(positions[i2], positions[i2 + 1], positions[i2 + 2]);
-                        const p3 = project3DTo2D(positions[i3], positions[i3 + 1], positions[i3 + 2]);
-                        
-                        svg += `
-    <path d="M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} L ${p2.x.toFixed(2)},${p2.y.toFixed(2)} L ${p3.x.toFixed(2)},${p3.y.toFixed(2)} Z" 
+          }
+        } else if (wireframeType === "triangles" && terrain.geometry) {
+          // Triangle wireframe - extract triangle edges
+          const positions = terrain.geometry.attributes.position.array;
+          const indices = terrain.geometry.index
+            ? terrain.geometry.index.array
+            : null;
+
+          if (indices) {
+            for (let i = 0; i < indices.length; i += 3) {
+              const i1 = indices[i] * 3;
+              const i2 = indices[i + 1] * 3;
+              const i3 = indices[i + 2] * 3;
+
+              const p1 = project3DTo2D(
+                positions[i1],
+                positions[i1 + 1],
+                positions[i1 + 2]
+              );
+              const p2 = project3DTo2D(
+                positions[i2],
+                positions[i2 + 1],
+                positions[i2 + 2]
+              );
+              const p3 = project3DTo2D(
+                positions[i3],
+                positions[i3 + 1],
+                positions[i3 + 2]
+              );
+
+              svg += `
+    <path d="M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} L ${p2.x.toFixed(
+                2
+              )},${p2.y.toFixed(2)} L ${p3.x.toFixed(2)},${p3.y.toFixed(2)} Z" 
           class="terrain-line"/>`;
-                    }
-                }
             }
-            
-            svg += `
-</g>
-</svg>`;
-            
-            // Download SVG
-            const blob = new Blob([svg], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.download = `terrain_${currentCameraMode}_${cameraRotation}deg_${wireframeType}.svg`;
-            link.href = url;
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-        
-        function exportAllViews() {
-            const originalMode = currentCameraMode;
-            const views = ['profile', 'isolow', 'isomed', 'isohigh'];
-            let currentIndex = 0;
-            
-            function exportNext() {
-                if (currentIndex >= views.length) {
-                    setCameraPreset(originalMode);
-                    return;
-                }
-                
-                setCameraPreset(views[currentIndex]);
-                
-                setTimeout(() => {
-                    const format = exportSize === 'svg' ? 'svg' : 'png';
-                    const resolution = format === 'svg' ? 1 : exportSize;
-                    exportCurrentView(format, resolution);
-                    currentIndex++;
-                    setTimeout(exportNext, 150);
-                }, 50);
-            }
-            
-            exportNext();
-        }
-        
-        function setExportSize(size) {
-            exportSize = size;
-            document.querySelectorAll('.export-btn').forEach(btn => btn.classList.remove('active'));
-            
-            const buttonMap = {
-                1: 'export1xBtn',
-                2: 'export2xBtn', 
-                4: 'export4xBtn',
-                'svg': 'exportSvgBtn'
-            };
-            
-            if (buttonMap[size]) {
-                document.getElementById(buttonMap[size]).classList.add('active');
-            }
-        }
-        
-        function setExportBackground(bg) {
-            exportBackground = bg;
-            document.querySelectorAll('.bg-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(bg === 'black' ? 'bgBlackBtn' : 'bgTransBtn').classList.add('active');
+          }
         }
 
-        // Event listeners
-        document.getElementById('generateBtn').addEventListener('click', generateTerrain);
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            const format = exportSize === 'svg' ? 'svg' : 'png';
-            const resolution = format === 'svg' ? 1 : exportSize;
+        svg += `
+</g>
+</svg>`;
+
+        // Download SVG
+        const blob = new Blob([svg], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `terrain_${currentCameraMode}_${cameraRotation}deg_${wireframeType}.svg`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function exportAllViews() {
+        const originalMode = currentCameraMode;
+        const views = ["profile", "isolow", "isomed", "isohigh"];
+        let currentIndex = 0;
+
+        function exportNext() {
+          if (currentIndex >= views.length) {
+            setCameraPreset(originalMode);
+            return;
+          }
+
+          setCameraPreset(views[currentIndex]);
+
+          setTimeout(() => {
+            const format = exportSize === "svg" ? "svg" : "png";
+            const resolution = format === "svg" ? 1 : exportSize;
             exportCurrentView(format, resolution);
-        });
-        
-        // Background option buttons
-        document.getElementById('bgBlackBtn').addEventListener('click', () => setExportBackground('black'));
-        document.getElementById('bgTransBtn').addEventListener('click', () => setExportBackground('transparent'));
-        
-        // Export option buttons
-        document.getElementById('export1xBtn').addEventListener('click', () => setExportSize(1));
-        document.getElementById('export2xBtn').addEventListener('click', () => setExportSize(2));
-        document.getElementById('export4xBtn').addEventListener('click', () => setExportSize(4));
-        document.getElementById('exportSvgBtn').addEventListener('click', () => setExportSize('svg'));
-        document.getElementById('exportAllBtn').addEventListener('click', exportAllViews);
-        
-        // Camera preset buttons
-        document.getElementById('profileBtn').addEventListener('click', () => setCameraPreset('profile'));
-        document.getElementById('isoLowBtn').addEventListener('click', () => setCameraPreset('isolow'));
-        document.getElementById('isoMedBtn').addEventListener('click', () => setCameraPreset('isomed'));
-        document.getElementById('isoHighBtn').addEventListener('click', () => setCameraPreset('isohigh'));
-        
-        // Wireframe type buttons
-        document.getElementById('trianglesBtn').addEventListener('click', () => setWireframeType('triangles'));
-        document.getElementById('gridBtn').addEventListener('click', () => setWireframeType('grid'));
-        
-        function setWireframeType(type) {
-            wireframeType = type;
-            document.querySelectorAll('.wireframe-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(type === 'triangles' ? 'trianglesBtn' : 'gridBtn').classList.add('active');
-            generateTerrain();
+            currentIndex++;
+            setTimeout(exportNext, 150);
+          }, 50);
         }
-        
-        // Slider controls
-        const zoomSlider = document.getElementById('zoomSlider');
-        const rotationSlider = document.getElementById('rotationSlider');
-        const scaleSlider = document.getElementById('scaleSlider');
-        const heightSlider = document.getElementById('heightSlider');
-        const noiseSlider = document.getElementById('noiseSlider');
-        const densitySlider = document.getElementById('densitySlider');
-        
-        zoomSlider.addEventListener('input', (e) => {
-            zoomLevel = parseInt(e.target.value);
-            document.getElementById('zoomValue').textContent = zoomLevel;
-            setupCamera();
-        });
-        
-        rotationSlider.addEventListener('input', (e) => {
-            cameraRotation = parseInt(e.target.value);
-            document.getElementById('rotationValue').textContent = cameraRotation;
-            setupCamera();
-        });
-        
-        scaleSlider.addEventListener('input', (e) => {
-            terrainScale = parseInt(e.target.value);
-            document.getElementById('scaleValue').textContent = terrainScale;
-            generateTerrain();
-        });
-        
-        heightSlider.addEventListener('input', (e) => {
-            heightIntensity = parseInt(e.target.value);
-            document.getElementById('heightValue').textContent = heightIntensity;
-            generateTerrain();
-        });
-        
-        noiseSlider.addEventListener('input', (e) => {
-            noiseScale = parseFloat(e.target.value);
-            document.getElementById('noiseValue').textContent = noiseScale;
-            generateTerrain();
-        });
-        
-        densitySlider.addEventListener('input', (e) => {
-            gridDensity = parseInt(e.target.value);
-            document.getElementById('densityValue').textContent = gridDensity;
-            generateTerrain();
-        });
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            const aspect = window.innerWidth / window.innerHeight;
-            const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
-            const frustumSize = 60 / zoomFactor;
-            
-            camera.left = frustumSize * aspect / -2;
-            camera.right = frustumSize * aspect / 2;
-            camera.top = frustumSize / 2;
-            camera.bottom = frustumSize / -2;
-            
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        // Initialize the application
-        init();
+
+        exportNext();
+      }
+
+      function setExportSize(size) {
+        exportSize = size;
+        document
+          .querySelectorAll(".export-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        const buttonMap = {
+          1: "export1xBtn",
+          2: "export2xBtn",
+          4: "export4xBtn",
+          svg: "exportSvgBtn",
+        };
+
+        if (buttonMap[size]) {
+          document.getElementById(buttonMap[size]).classList.add("active");
+        }
+      }
+
+      function setExportBackground(bg) {
+        exportBackground = bg;
+        document
+          .querySelectorAll(".bg-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        document
+          .getElementById(bg === "black" ? "bgBlackBtn" : "bgTransBtn")
+          .classList.add("active");
+      }
+
+      // Event listeners
+      document
+        .getElementById("generateBtn")
+        .addEventListener("click", generateTerrain);
+      document.getElementById("exportBtn").addEventListener("click", () => {
+        const format = exportSize === "svg" ? "svg" : "png";
+        const resolution = format === "svg" ? 1 : exportSize;
+        exportCurrentView(format, resolution);
+      });
+
+      // Background option buttons
+      document
+        .getElementById("bgBlackBtn")
+        .addEventListener("click", () => setExportBackground("black"));
+      document
+        .getElementById("bgTransBtn")
+        .addEventListener("click", () => setExportBackground("transparent"));
+
+      // Export option buttons
+      document
+        .getElementById("export1xBtn")
+        .addEventListener("click", () => setExportSize(1));
+      document
+        .getElementById("export2xBtn")
+        .addEventListener("click", () => setExportSize(2));
+      document
+        .getElementById("export4xBtn")
+        .addEventListener("click", () => setExportSize(4));
+      document
+        .getElementById("exportSvgBtn")
+        .addEventListener("click", () => setExportSize("svg"));
+      document
+        .getElementById("exportAllBtn")
+        .addEventListener("click", exportAllViews);
+
+      // Camera preset buttons
+      document
+        .getElementById("profileBtn")
+        .addEventListener("click", () => setCameraPreset("profile"));
+      document
+        .getElementById("isoLowBtn")
+        .addEventListener("click", () => setCameraPreset("isolow"));
+      document
+        .getElementById("isoMedBtn")
+        .addEventListener("click", () => setCameraPreset("isomed"));
+      document
+        .getElementById("isoHighBtn")
+        .addEventListener("click", () => setCameraPreset("isohigh"));
+
+      // Wireframe type buttons
+      document
+        .getElementById("trianglesBtn")
+        .addEventListener("click", () => setWireframeType("triangles"));
+      document
+        .getElementById("gridBtn")
+        .addEventListener("click", () => setWireframeType("grid"));
+
+      function setWireframeType(type) {
+        wireframeType = type;
+        document
+          .querySelectorAll(".wireframe-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        document
+          .getElementById(type === "triangles" ? "trianglesBtn" : "gridBtn")
+          .classList.add("active");
+        generateTerrain();
+      }
+
+      // Slider controls
+      const zoomSlider = document.getElementById("zoomSlider");
+      const rotationSlider = document.getElementById("rotationSlider");
+      const scaleSlider = document.getElementById("scaleSlider");
+      const heightSlider = document.getElementById("heightSlider");
+      const noiseSlider = document.getElementById("noiseSlider");
+      const densitySlider = document.getElementById("densitySlider");
+
+      zoomSlider.addEventListener("input", (e) => {
+        zoomLevel = parseInt(e.target.value);
+        document.getElementById("zoomValue").textContent = zoomLevel;
+        setupCamera();
+      });
+
+      rotationSlider.addEventListener("input", (e) => {
+        cameraRotation = parseInt(e.target.value);
+        document.getElementById("rotationValue").textContent = cameraRotation;
+        setupCamera();
+      });
+
+      scaleSlider.addEventListener("input", (e) => {
+        terrainScale = parseInt(e.target.value);
+        document.getElementById("scaleValue").textContent = terrainScale;
+        generateTerrain();
+      });
+
+      heightSlider.addEventListener("input", (e) => {
+        heightIntensity = parseInt(e.target.value);
+        document.getElementById("heightValue").textContent = heightIntensity;
+        generateTerrain();
+      });
+
+      noiseSlider.addEventListener("input", (e) => {
+        noiseScale = parseFloat(e.target.value);
+        document.getElementById("noiseValue").textContent = noiseScale;
+        generateTerrain();
+      });
+
+      densitySlider.addEventListener("input", (e) => {
+        gridDensity = parseInt(e.target.value);
+        document.getElementById("densityValue").textContent = gridDensity;
+        generateTerrain();
+      });
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        const aspect = window.innerWidth / window.innerHeight;
+        const zoomFactor = 0.3 + (zoomLevel / 100) * 1.7;
+        const frustumSize = 60 / zoomFactor;
+
+        camera.left = (frustumSize * aspect) / -2;
+        camera.right = (frustumSize * aspect) / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = frustumSize / -2;
+
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Initialize the application
+      init();
     </script>
-</body>
+  </body>
 </html>
